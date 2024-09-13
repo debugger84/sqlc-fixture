@@ -68,7 +68,7 @@ func (r *FixtureRenderer) Render() ([]*plugin.File, error) {
 	)
 	files := make([]*plugin.File, 0)
 	loaderImporter := r.importer.
-		AddSqlDriver().
+		AddWithoutAlias("testing").
 		AddWithoutAlias("context")
 
 	for _, s := range r.structs {
@@ -106,7 +106,6 @@ func (r *FixtureRenderer) renderFixture(
 		PrimaryKeyFieldType:  pkField.Type().TypeWithPackage(),
 		PrimaryKeyFieldName:  pkField.Name(),
 		Imports: importer.
-			Add(pkField.Type().Import()).
 			ImportContainer(&s).
 			Build(),
 	}

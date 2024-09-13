@@ -82,15 +82,23 @@ func (s *Struct) Type() *gotype.GoType {
 }
 
 func (s *Struct) GetImports() []imports.Import {
+	allImports := make([]imports.Import, 0, len(s.fields)+1)
+	for _, field := range s.fields {
+		if field.goType == nil {
+			continue
+		}
+		if field.goType.Import().Path == "" {
+			continue
+		}
+		allImports = append(allImports, field.goType.Import())
+	}
 	if s.goType == nil {
-		return nil
+		return allImports
 	}
 	if s.goType.Import().Path == "" {
-		return nil
+		return allImports
 	}
-	return []imports.Import{
-		s.goType.Import(),
-	}
+	return append(allImports, s.goType.Import())
 }
 
 func (s *Struct) initFields(

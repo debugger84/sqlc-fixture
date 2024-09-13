@@ -22,14 +22,14 @@
         }
     }
 
-    {{ range .Struct.Fields -}}
+    {{- range .Struct.Fields }}
 
     func (f *{{ $.Struct.Type.TypeName }}Fixture) {{.Name}}({{ lowerTitle .Name }} {{.Type.TypeWithPackage}}) *{{ $.Struct.Type.TypeName }}Fixture {
         c := f.clone()
         c.entity.{{.Name}} = {{ lowerTitle .Name }}
         return c
     }
-    {{ end -}}
+    {{- end }}
 
     func (f *{{ .Struct.Type.TypeName }}Fixture) clone() *{{ .Struct.Type.TypeName }}Fixture {
         return &{{ .Struct.Type.TypeName }}Fixture{
@@ -40,8 +40,12 @@
 
 
     func (f *{{ .Struct.Type.TypeName }}Fixture) save(ctx context.Context) error {
-        query := `INSERT INTO {{ .Struct.FullTableName }} ({{ $.Helper.ColumnNames }}) VALUES ({{ $.Helper.ColumnPlaceholders }}) RETURNING {{ $.Helper.ColumnNames }}`
-        row := q.db.QueryRow(ctx, query,
+        query := `INSERT INTO {{ .Struct.FullTableName }}
+            ({{ $.Helper.ColumnNames }})
+            VALUES ({{ $.Helper.ColumnPlaceholders }})
+            RETURNING {{ $.Helper.ColumnNames }}
+        `
+        row := f.db.QueryRow(ctx, query,
     {{ range .Struct.Fields -}}
         f.entity.{{.Name}},
     {{ end}}
@@ -58,33 +62,59 @@
         return f.entity
     }
 
-        func (f *{{ .Struct.Type.TypeName }}Fixture) Create(tb testing.TB) {{ .Struct.Type.TypeWithPackage }} {
-            err := f.save(context.Background())
-            if err != nil {
-                tb.Fatalf("failed to create {{ .Struct.Type.TypeName }}: %v", err)
-            }
-            f.Cleanup(tb)
-            return f.entity
+    func (f *{{ .Struct.Type.TypeName }}Fixture) Create(tb testing.TB) *{{ $.Struct.Type.TypeName }}Fixture {
+        err := f.save(context.Background())
+        if err != nil {
+            tb.Fatalf("failed to create {{ .Struct.Type.TypeName }}: %v", err)
         }
+        f.Cleanup(tb)
+        c := f.clone()
+        return c
+    }
 
-        func (f *{{ .Struct.Type.TypeName }}Fixture) Cleanup(tb testing.TB) {
-            t.Cleanup(
-            func() {
-                query := `DELETE FROM {{ .Struct.FullTableName }}`
-                {{ $addPrimary := false }}
-                {{range .Struct.Fields}}
-                    {{ if .IsPrimaryKey }}
-                        {{ $addPrimary = true }}
-                        query += ` WHERE {{ .Name }} = $1`
-                        _, err := f.db.Exec(context.Background(), query, f.entity.{{ .Name }})
-                    {{ end }}
-                {{end}}
-        {{ if not $addPrimary }}
-                _, err := f.db.Exec(context.Background(), query)
+    func (f *{{ .Struct.Type.TypeName }}Fixture) Cleanup(tb testing.TB) {
+        tb.Cleanup(
+        func() {
+            {{- $addPrimary := false -}}
+            {{- range .Struct.Fields -}}
+                {{ if .IsPrimaryKey }}
+                    {{- $addPrimary = true }}
+                    query := `DELETE FROM {{ $.Struct.FullTableName }} WHERE {{ .DBName }} = $1`
+                    _, err := f.db.Exec(context.Background(), query, f.entity.{{ .Name }})
+                {{ end }}
+            {{end}}
+    {{ if not $addPrimary }}
+        query := `DELETE FROM {{ .Struct.FullTableName }}`
+            _, err := f.db.Exec(context.Background(), query)
+    {{end}}
+            if err != nil {
+                tb.Fatalf("failed to cleanup {{ .Struct.Type.TypeName }}: %v", err)
+            }
+        })
+    }
+
+    {{ if .Struct.HasPrimaryKey}}
+    func (f *{{ .Struct.Type.TypeName }}Fixture) PullUpdates(tb testing.TB) *{{ $.Struct.Type.TypeName }}Fixture {
+        c := f.clone()
+        {{- range .Struct.Fields -}}
+            {{ if .IsPrimaryKey }}
+                {{- $addPrimary = true }}
+                ctx := context.Background()
+                query := `SELECT * FROM {{ $.Struct.FullTableName }} WHERE {{ .DBName }} = $1`
+                row := f.db.QueryRow(ctx, query,
+                    c.entity.{{ .Name }},
+                )
+            {{ end }}
         {{end}}
-                if err != nil {
-                    tb.Fatalf("failed to cleanup {{ .Struct.Type.TypeName }}: %v", err)
-                }
-            })
+        err := row.Scan(
+        {{ range .Struct.Fields -}}
+            &c.entity.{{ .Name }},
+        {{ end}}
+        )
+        if err != nil {
+            tb.Fatalf("failed to actualize data {{ .Struct.Type.TypeName }}: %v", err)
         }
+        return c
+    }
+    {{end}}
 {{end}}

@@ -2,6 +2,7 @@ package model
 
 import (
 	"github.com/debugger84/sqlc-fixture/internal/gotype"
+	"github.com/debugger84/sqlc-fixture/internal/gotype/db"
 	"github.com/debugger84/sqlc-fixture/internal/opts"
 	"github.com/debugger84/sqlc-fixture/internal/sqltype"
 	"github.com/sqlc-dev/plugin-sdk-go/plugin"
@@ -16,7 +17,7 @@ func BuildStructs(
 ) []Struct {
 	var structs []Struct
 
-	gotypeTransformer, err := gotype.NewDbTOGoTypeTransformer(opts.SQLEngine(req.Settings.Engine), customTypes, options)
+	gotypeTransformer, err := db.NewDbTOGoTypeTransformer(opts.SQLEngine(req.Settings.Engine), customTypes, options)
 	if err != nil {
 		log.Fatal(err)
 		return nil

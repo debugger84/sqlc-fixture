@@ -1,6 +1,7 @@
-package gotype
+package db
 
 import (
+	"github.com/debugger84/sqlc-fixture/internal/gotype"
 	"github.com/debugger84/sqlc-fixture/internal/imports"
 	"github.com/debugger84/sqlc-fixture/internal/opts"
 	"github.com/debugger84/sqlc-fixture/internal/sqltype"
@@ -27,7 +28,7 @@ func NewPostgresqlTypeTransformer(options *opts.Options, customTypes []sqltype.C
 	}
 }
 
-func (t *PostgresqlTypeTransformer) ToGoType(col *plugin.Column) GoType {
+func (t *PostgresqlTypeTransformer) ToGoType(col *plugin.Column) gotype.GoType {
 	columnType := sdk.DataType(col.Type)
 	notNull := col.NotNull || col.IsArray
 	driver := t.driver
@@ -40,14 +41,14 @@ func (t *PostgresqlTypeTransformer) ToGoType(col *plugin.Column) GoType {
 		}
 	}
 
-	resType := *NewGoType(name)
-	if resType.packageName != "" {
+	resType := *gotype.NewGoType(name)
+	if resType.PackageName() != "" {
 		resType = t.addImport(resType, driver)
 	}
 	return resType
 }
 
-func (t *PostgresqlTypeTransformer) addImport(goType GoType, driver opts.SQLDriver) GoType {
+func (t *PostgresqlTypeTransformer) addImport(goType gotype.GoType, driver opts.SQLDriver) gotype.GoType {
 	if goType.PackageName() == "" {
 		return goType
 	}
@@ -71,7 +72,7 @@ func (t *PostgresqlTypeTransformer) addImport(goType GoType, driver opts.SQLDriv
 	return goType
 }
 
-func (t *PostgresqlTypeTransformer) addPgTypeImports(goType GoType, driver opts.SQLDriver) GoType {
+func (t *PostgresqlTypeTransformer) addPgTypeImports(goType gotype.GoType, driver opts.SQLDriver) gotype.GoType {
 	sqlcPgTypes := map[string]struct{}{
 		"pqtype.CIDR":           {},
 		"pqtype.Inet":           {},
@@ -106,7 +107,7 @@ func (t *PostgresqlTypeTransformer) addPgTypeImports(goType GoType, driver opts.
 func (t *PostgresqlTypeTransformer) getCustomGoType(
 	col *plugin.Column,
 	notNull bool,
-) *GoType {
+) *gotype.GoType {
 	colSchema := col.Type.Schema
 	if colSchema == "" {
 		colSchema = t.defaultSchema
@@ -114,7 +115,7 @@ func (t *PostgresqlTypeTransformer) getCustomGoType(
 	for _, customType := range t.customTypes {
 		if colSchema == customType.Schema && col.Type.Name == customType.SqlTypeName &&
 			notNull == !customType.IsNullable {
-			return NewGoType(customType.GoTypeName)
+			return &customType.GoType
 		}
 	}
 

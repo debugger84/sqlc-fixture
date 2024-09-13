@@ -1,6 +1,8 @@
 package sqltype
 
 import (
+	"github.com/debugger84/sqlc-fixture/internal/gotype"
+	"github.com/debugger84/sqlc-fixture/internal/imports"
 	"github.com/debugger84/sqlc-fixture/internal/naming"
 	"github.com/debugger84/sqlc-fixture/internal/opts"
 	"github.com/sqlc-dev/plugin-sdk-go/plugin"
@@ -14,7 +16,7 @@ const (
 )
 
 type CustomType struct {
-	GoTypeName  string
+	GoType      gotype.GoType
 	SqlTypeName string
 	Schema      string
 	Kind        CustomTypeKind
@@ -35,15 +37,21 @@ func NewCustomTypes(
 
 		for _, enum := range schema.Enums {
 			baseName := normalizer.NormalizeSqlName(schema.Name, enum.Name)
+			pckg := ""
+			if options.ModelImport != "" {
+				pckg = options.ModelImport + "."
+			}
+			nullGoType := gotype.NewGoType(pckg + "Null" + normalizer.NormalizeGoType(baseName))
+			goType := gotype.NewGoType(pckg + normalizer.NormalizeGoType(baseName))
 			customTypes = append(
 				customTypes, CustomType{
-					GoTypeName:  "Null" + normalizer.NormalizeGoType(baseName),
+					GoType:      *nullGoType,
 					SqlTypeName: enum.Name,
 					Schema:      schema.Name,
 					Kind:        EnumType,
 					IsNullable:  true,
 				}, CustomType{
-					GoTypeName:  normalizer.NormalizeGoType(baseName),
+					GoType:      *goType,
 					SqlTypeName: enum.Name,
 					Schema:      schema.Name,
 					Kind:        EnumType,
@@ -55,21 +63,23 @@ func NewCustomTypes(
 		emitPointersForNull := driver.IsPGX() && options.EmitPointersForNullTypes
 
 		for _, ct := range schema.CompositeTypes {
-			name := "string"
-			nullName := "sql.NullString"
+			goType := gotype.NewGoType("string")
+			nullGoType := gotype.NewGoType("sql.NullString")
 			if emitPointersForNull {
-				nullName = "*string"
+				nullGoType = gotype.NewGoType("*string")
+			} else {
+				nullGoType.SetImport(imports.Import{Path: "database/sql"})
 			}
 
 			customTypes = append(
 				customTypes, CustomType{
-					GoTypeName:  name,
+					GoType:      *goType,
 					SqlTypeName: ct.Name,
 					Schema:      schema.Name,
 					Kind:        CompositeType,
 					IsNullable:  false,
 				}, CustomType{
-					GoTypeName:  nullName,
+					GoType:      *nullGoType,
 					SqlTypeName: ct.Name,
 					Schema:      schema.Name,
 					Kind:        CompositeType,

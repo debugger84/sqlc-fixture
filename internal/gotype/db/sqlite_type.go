@@ -1,6 +1,7 @@
-package gotype
+package db
 
 import (
+	"github.com/debugger84/sqlc-fixture/internal/gotype"
 	"github.com/debugger84/sqlc-fixture/internal/opts"
 	"github.com/debugger84/sqlc-fixture/internal/sqltype"
 	"log"
@@ -23,14 +24,14 @@ func NewSqlLiteTypeTransformer(options *opts.Options, customTypes []sqltype.Cust
 	}
 }
 
-func (t *SqlLiteTypeTransformer) ToGoType(col *plugin.Column) GoType {
+func (t *SqlLiteTypeTransformer) ToGoType(col *plugin.Column) gotype.GoType {
 	dt := strings.ToLower(sdk.DataType(col.Type))
 	notNull := col.NotNull || col.IsArray
 	emitPointersForNull := t.emitPointersForNull
 
 	name := t.getTypeName(dt, notNull, emitPointersForNull)
 
-	resType := *NewGoType(name)
+	resType := *gotype.NewGoType(name)
 	return resType
 }
 

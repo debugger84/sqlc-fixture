@@ -1,6 +1,7 @@
-package gotype
+package db
 
 import (
+	"github.com/debugger84/sqlc-fixture/internal/gotype"
 	"github.com/debugger84/sqlc-fixture/internal/sqltype"
 	"log"
 
@@ -18,7 +19,7 @@ func NewMysqlTypeTransformer(customTypes []sqltype.CustomType) *MysqlTypeTransfo
 	}
 }
 
-func (t *MysqlTypeTransformer) ToGoType(col *plugin.Column) GoType {
+func (t *MysqlTypeTransformer) ToGoType(col *plugin.Column) gotype.GoType {
 	columnType := sdk.DataType(col.Type)
 	notNull := col.NotNull || col.IsArray
 	unsigned := col.Unsigned
@@ -30,18 +31,18 @@ func (t *MysqlTypeTransformer) ToGoType(col *plugin.Column) GoType {
 		}
 	}
 
-	resType := *NewGoType(name)
+	resType := *gotype.NewGoType(name)
 	return resType
 }
 
 func (t *MysqlTypeTransformer) getCustomGoType(
 	col *plugin.Column,
 	notNull bool,
-) *GoType {
+) *gotype.GoType {
 	for _, customType := range t.customTypes {
 		if col.Type.Name == customType.SqlTypeName &&
 			notNull == !customType.IsNullable {
-			return NewGoType(customType.GoTypeName)
+			return &customType.GoType
 		}
 	}
 	log.Printf("Unknown MySQL type: %s\n", col.Type.Name)

@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/debugger84/sqlc-fixture/internal/imports"
 	"github.com/debugger84/sqlc-fixture/internal/opts"
-	"github.com/debugger84/sqlc-fixture/internal/sqltype"
 	"strings"
 
 	"github.com/sqlc-dev/plugin-sdk-go/plugin"
@@ -133,23 +132,6 @@ func NewGoTypeFormatter(
 		sqlTypeTransformer: typeTransformer,
 		options:            options,
 	}
-}
-
-func NewDbTOGoTypeTransformer(
-	engine opts.SQLEngine,
-	customTypes []sqltype.CustomType,
-	options *opts.Options,
-) (DbTOGoTypeTransformer, error) {
-	var typeTransformer DbTOGoTypeTransformer
-	switch engine {
-	case opts.SQLEngineMySQL:
-		return NewMysqlTypeTransformer(customTypes), nil
-	case opts.SQLEngineSQLite:
-		return NewSqlLiteTypeTransformer(options, customTypes), nil
-	case opts.SQLEnginePostgresql:
-		return NewPostgresqlTypeTransformer(options, customTypes), nil
-	}
-	return typeTransformer, fmt.Errorf("unsupported sql engine %s", engine)
 }
 
 func (f *GoTypeFormatter) ToGoType(col *plugin.Column) GoType {
