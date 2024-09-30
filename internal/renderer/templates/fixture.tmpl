@@ -72,7 +72,9 @@
         return c
     }
 
-    func (f *{{ .Struct.Type.TypeName }}Fixture) Cleanup(tb testing.TB) {
+    // Cleanup calls testing.TB.Cleanup() function with providing a callback inside it.
+    // This callback will delete a record from the table by primary key when test will be finished.
+    func (f *{{ .Struct.Type.TypeName }}Fixture) Cleanup(tb testing.TB) *{{ $.Struct.Type.TypeName }}Fixture {
         tb.Cleanup(
         func() {
             {{- $addPrimary := false -}}
@@ -91,6 +93,8 @@
                 tb.Fatalf("failed to cleanup {{ .Struct.Type.TypeName }}: %v", err)
             }
         })
+
+        return f
     }
 
     {{ if .Struct.HasPrimaryKey}}
