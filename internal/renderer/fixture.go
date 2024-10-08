@@ -56,7 +56,12 @@ func (r *FixtureRenderer) Render() ([]*plugin.File, error) {
 		return nil, nil
 	}
 	funcMap := template.FuncMap{
-		"lowerTitle": sdk.LowerTitle,
+		"lowerTitle": func(s string) string {
+			title := sdk.LowerTitle(s)
+			title = r.renameReservedWords(title)
+
+			return title
+		},
 	}
 	tmpl := template.Must(
 		template.New("fixture.tmpl").
@@ -83,6 +88,61 @@ func (r *FixtureRenderer) Render() ([]*plugin.File, error) {
 	}
 
 	return files, nil
+}
+
+func (r *FixtureRenderer) renameReservedWords(title string) string {
+	if title == "type" {
+		return "typ"
+	}
+	if title == "range" {
+		return "rng"
+	}
+	if title == "map" {
+		return "mp"
+	}
+	if title == "string" {
+		return "str"
+	}
+	if title == "interface" {
+		return "iface"
+	}
+	if title == "select" {
+		return "sel"
+	}
+	if title == "default" {
+		return "def"
+	}
+	if title == "case" {
+		return "c"
+	}
+	if title == "switch" {
+		return "sw"
+	}
+	if title == "for" {
+		return "f"
+	}
+	if title == "func" {
+		return "fn"
+	}
+	if title == "return" {
+		return "ret"
+	}
+	if title == "package" {
+		return "pkg"
+	}
+	if title == "import" {
+		return "imp"
+	}
+	if title == "var" {
+		return "v"
+	}
+	if title == "const" {
+		return "cst"
+	}
+	if title == "struct" {
+		return "st"
+	}
+	return title
 }
 
 func (r *FixtureRenderer) renderFixture(
