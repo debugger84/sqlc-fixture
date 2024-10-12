@@ -24,7 +24,7 @@
 
     {{- range .Struct.Fields }}
 
-    func (f *{{ $.Struct.Type.TypeName }}Fixture) {{.Name}}({{ lowerTitle .Name }} {{.Type.TypeWithPackage}}) *{{ $.Struct.Type.TypeName }}Fixture {
+    func (f *{{ $.Struct.Type.TypeName }}Fixture) {{.Name}}({{ lowerTitle .Name }} {{.Type.String}}) *{{ $.Struct.Type.TypeName }}Fixture {
         c := f.clone()
         c.entity.{{.Name}} = {{ lowerTitle .Name }}
         return c
