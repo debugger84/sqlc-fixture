@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/debugger84/sqlc-fixture/internal/model"
 	"github.com/debugger84/sqlc-fixture/internal/opts"
+	"strings"
 )
 
 type StructHelper struct {
@@ -34,6 +35,33 @@ func (h *StructHelper) ColumnPlaceholders() string {
 			out += "?"
 		}
 	}
+	return out
+}
+
+func (h *StructHelper) UpdateSql() string {
+	out := ""
+	updatedFields := make([]string, 0, len(h.s.Fields()))
+	whereClause := ""
+	for i, field := range h.s.Fields() {
+		if field.IsPrimaryKey() {
+			whereClause = fmt.Sprintf("%s = ?", field.DBName())
+			if h.driver.IsPGX() || h.driver.IsLibPQ() {
+				whereClause = fmt.Sprintf("%s = $%d", field.DBName(), i+1)
+			}
+		} else {
+			updatedField := fmt.Sprintf("%s = ?", field.DBName())
+			if h.driver.IsPGX() || h.driver.IsLibPQ() {
+				updatedField = fmt.Sprintf("%s = $%d", field.DBName(), i+1)
+			}
+			updatedFields = append(updatedFields, updatedField)
+		}
+	}
+	out = fmt.Sprintf(
+		"UPDATE %s SET \n            %s\n        WHERE %s",
+		h.s.FullTableName(),
+		strings.Join(updatedFields, ",\n            "),
+		whereClause,
+	)
 	return out
 }
 

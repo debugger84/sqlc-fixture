@@ -120,5 +120,23 @@
         }
         return c
     }
+
+    func (f *{{ .Struct.Type.TypeName }}Fixture) PushUpdates(tb testing.TB) *{{ $.Struct.Type.TypeName }}Fixture {
+        c := f.clone()
+        query := `
+        {{ $.Helper.UpdateSql }}
+        `
+        _, err := f.db.Exec(
+            context.Background(),
+            query,
+    {{ range .Struct.Fields -}}
+             f.entity.{{ .Name }},
+    {{end}}
+        )
+        if err != nil {
+            tb.Fatalf("failed to push the data {{ .Struct.Type.TypeName }}: %v", err)
+        }
+        return c
+    }
     {{end}}
 {{end}}
