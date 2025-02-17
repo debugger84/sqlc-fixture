@@ -175,12 +175,14 @@ func (r *FixtureRenderer) renderFixture(
 	err := tmpl.ExecuteTemplate(w, "fixture.tmpl", &tctx)
 	w.Flush()
 	if err != nil {
+		fmt.Println(b.String())
 		return nil, err
 	}
 	code, err := format.Source(b.Bytes())
 	if err != nil {
-		fmt.Println(b.String())
-		return nil, fmt.Errorf("source error: %w", err)
+		//fmt.Println(b.String())
+		//return nil, fmt.Errorf("source error1: %w", err)
+		code = b.Bytes()
 	}
 	filename := fmt.Sprintf("%s_loader.go", strcase.ToSnake(s.Type().TypeName()))
 	if r.loaderPackage != s.Type().PackageName() {

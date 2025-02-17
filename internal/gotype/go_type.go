@@ -38,16 +38,17 @@ func NewGoType(fullTypeName string) *GoType {
 		fullTypeName = fullTypeName[1:]
 	}
 	parts := strings.Split(fullTypeName, ".")
-	if len(parts) == 2 {
-		pathParts := strings.Split(parts[0], "/")
-		importPath := ""
-		packageName := parts[0]
-		if len(pathParts) > 1 {
-			importPath = parts[0]
-			packageName = pathParts[len(pathParts)-1]
+	if len(parts) > 1 {
+		typeName := parts[len(parts)-1]
+		importPath := strings.Join(parts[:len(parts)-1], ".")
+		pathParts := strings.Split(importPath, "/")
+		packageName := pathParts[len(pathParts)-1]
+
+		if len(pathParts) == 1 {
+			importPath = ""
 		}
 		return &GoType{
-			typeName:    parts[1],
+			typeName:    typeName,
 			packageName: packageName,
 			isPointer:   isPointer,
 			isArray:     isArray,
