@@ -146,9 +146,10 @@ func (f *GoTypeFormatter) ToGoType(col *plugin.Column) GoType {
 
 	if col.IsSqlcSlice {
 		gotype.isArray = true
-		if col.IsArray {
-			gotype.arrayDims = int(col.ArrayDims)
-		}
+	}
+	if col.IsArray {
+		gotype.isArray = true
+		gotype.arrayDims = int(col.ArrayDims)
 	}
 
 	return gotype
