@@ -71,10 +71,10 @@ func (s *Struct) FullTableName() string {
 	tableName := s.table.Rel.GetName()
 
 	if schema == "" {
-		return tableName
+		return fmt.Sprintf("\"%s\"", tableName)
 	}
 
-	return fmt.Sprintf("%s.%s", schema, tableName)
+	return fmt.Sprintf("\"%s\".\"%s\"", schema, tableName)
 }
 
 func (s *Struct) Type() *gotype.GoType {
