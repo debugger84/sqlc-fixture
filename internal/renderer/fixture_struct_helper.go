@@ -13,14 +13,13 @@ type StructHelper struct {
 }
 
 func (h *StructHelper) ColumnNames() string {
-	out := ""
-	for i, f := range h.s.Fields() {
-		if i > 0 {
-			out += ", "
-		}
-		out += f.DBName()
+	fields := h.s.Fields()
+	names := make([]string, len(fields))
+	for i, field := range fields {
+		names[i] = fmt.Sprintf("\"%s\"", field.DBName())
 	}
-	return out
+
+	return strings.Join(names, ", ")
 }
 
 func (h *StructHelper) ColumnPlaceholders() string {
@@ -46,23 +45,35 @@ func (h *StructHelper) UpdateSql() string {
 		if field.IsPrimaryKey() {
 			whereClause = fmt.Sprintf("%s = ?", field.DBName())
 			if h.driver.IsPGX() || h.driver.IsLibPQ() {
-				whereClause = fmt.Sprintf("%s = $%d", field.DBName(), i+1)
+				whereClause = fmt.Sprintf("\"%s\" = $%d", field.DBName(), i+1)
 			}
 		} else {
 			updatedField := fmt.Sprintf("%s = ?", field.DBName())
 			if h.driver.IsPGX() || h.driver.IsLibPQ() {
-				updatedField = fmt.Sprintf("%s = $%d", field.DBName(), i+1)
+				updatedField = fmt.Sprintf("\"%s\" = $%d", field.DBName(), i+1)
 			}
 			updatedFields = append(updatedFields, updatedField)
 		}
 	}
 	out = fmt.Sprintf(
 		"UPDATE %s SET \n            %s\n        WHERE %s",
-		h.s.FullTableName(),
+		h.TableName(),
 		strings.Join(updatedFields, ",\n            "),
 		whereClause,
 	)
 	return out
+}
+
+func (h *StructHelper) TableName() string {
+	if h.driver.IsPGX() || h.driver.IsLibPQ() {
+		tn := h.s.FullTableName()
+		parts := strings.Split(tn, ".")
+		for i := range parts {
+			parts[i] = fmt.Sprintf("\"%s\"", parts[i])
+		}
+		return strings.Join(parts, ".")
+	}
+	return h.s.FullTableName()
 }
 
 func NewStructHelper(s model.Struct, driver opts.SQLDriver) *StructHelper {

@@ -40,7 +40,7 @@
 
 
     func (f *{{ .Struct.Type.TypeName }}Fixture) save(ctx context.Context) error {
-        query := `INSERT INTO {{ .Struct.FullTableName }}
+        query := `INSERT INTO {{ $.Helper.TableName }}
             ({{ $.Helper.ColumnNames }})
             VALUES ({{ $.Helper.ColumnPlaceholders }})
             RETURNING {{ $.Helper.ColumnNames }}
@@ -81,12 +81,12 @@
             {{- range .Struct.Fields -}}
                 {{ if .IsPrimaryKey }}
                     {{- $addPrimary = true }}
-                    query := `DELETE FROM {{ $.Struct.FullTableName }} WHERE {{ .DBName }} = $1`
+                    query := `DELETE FROM {{ $.Helper.TableName }} WHERE {{ .DBName }} = $1`
                     _, err := f.db.Exec(context.Background(), query, f.entity.{{ .Name }})
                 {{ end }}
             {{end}}
     {{ if not $addPrimary }}
-        query := `DELETE FROM {{ .Struct.FullTableName }}`
+        query := `DELETE FROM {{ $.Helper.TableName }}`
             _, err := f.db.Exec(context.Background(), query)
     {{end}}
             if err != nil {
@@ -104,7 +104,7 @@
             {{ if .IsPrimaryKey }}
                 {{- $addPrimary = true }}
                 ctx := context.Background()
-                query := `SELECT * FROM {{ $.Struct.FullTableName }} WHERE {{ .DBName }} = $1`
+                query := `SELECT {{ $.Helper.ColumnNames }} FROM {{ $.Helper.TableName }} WHERE {{ .DBName }} = $1`
                 row := f.db.QueryRow(ctx, query,
                     c.entity.{{ .Name }},
                 )
